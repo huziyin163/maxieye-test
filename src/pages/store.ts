@@ -35,10 +35,8 @@ export class ThreeHelper {
       antialias: true, // 渲染器 - antialias抗锯齿
     });
     this.gl.setPixelRatio(window.devicePixelRatio); // 设备画布像素比
-    this.gl.setSize(900, 500); // 设置画布尺寸
+    this.gl.setSize(window.innerWidth, window.innerHeight); // 设置画布尺寸
     this.gl.autoClear = false; // 关闭自动清除
-
-    // this.viewHelper = new ViewHelper(this.camera, this.gl.domElement);
 
     // controls 轨道控制器
     this.controls = new OrbitControls(this.camera, this.gl.domElement);
@@ -84,6 +82,10 @@ export class ThreeHelper {
     this.scene.add(cube);
   };
 
+  /** resize */
+  resize = () => {
+    this.gl.setSize(window.innerWidth, window.innerHeight);
+  };
   /** 卸载前清空缓存 */
   unintall = () => {
     this.gl?.dispose();

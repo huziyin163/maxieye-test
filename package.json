@@ -22,6 +22,7 @@
   "dependencies": {
     "@ant-design/pro-layout": "^6.5.0",
     "antd": "^5.2.1",
+    "lil-gui": "^0.18.0",
     "moment": "^2.29.4",
     "react": "17.x",
     "react-dom": "17.x",
@@ -30,9 +31,9 @@
     "umi": "^3.5.30"
   },
   "devDependencies": {
-    "@types/three": "^0.149.0",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
+    "@types/three": "^0.149.0",
     "@umijs/preset-react": "1.x",
     "@umijs/test": "^3.5.30",
     "lint-staged": "^10.0.7",
