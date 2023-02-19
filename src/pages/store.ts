@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader';
 import { message } from 'antd';
 
+import { downLoadAsJson, LabelType, BoxItem } from './utils';
+
 // 点云点大小
 const POINTSIZE = 0.1;
+
+const CAR_COLOR = '#DC143C';
+const TRANK_COLOR = '#FFFF00';
 
 export class ThreeHelper {
   scene; // 场景
@@ -13,10 +19,15 @@ export class ThreeHelper {
 
   camera; // 相机
 
-  controls: OrbitControls | undefined; // 控制器 - 控制相机
+  orbit: OrbitControls | undefined; // 控制器 - 控制相机
+
+  transControl: TransformControls | undefined; // 单个立体框的控制器 - 控制立体框
+
+  allBoxMap: BoxItem[];
+
   constructor() {
     this.init();
-    this.animate();
+    this.render();
   }
 
   init = () => {
@@ -25,7 +36,7 @@ export class ThreeHelper {
     this.scene.background = new THREE.Color(0x000000);
     this.scene.add(new THREE.AxesHelper(50));
 
-    // camera
+    // camera透视相机
     this.camera = new THREE.PerspectiveCamera(45, 1, 1, 10000);
     this.camera.position.set(0, 0, 200); // 设置相机位置
     this.camera.up.set(0, 0, 1);
@@ -38,32 +49,33 @@ export class ThreeHelper {
     this.gl.setSize(window.innerWidth, window.innerHeight); // 设置画布尺寸
     this.gl.autoClear = false; // 关闭自动清除
 
-    // controls 轨道控制器
-    this.controls = new OrbitControls(this.camera, this.gl.domElement);
-    this.controls.minDistance = 10; // 限制视线最近距离
-    this.controls.maxDistance = 500; // 限制视线多远距离
-    this.controls.enableDamping = true; // 是否开起控制器阻尼系数（理解为对旋转的阻力，系数越小阻力越小）
-    this.controls.dampingFactor = 0.05; // 设置阻尼系数（如果设置阻尼系数，这涉及到了模型的动态渲染所以在渲染器中需要一直调用.update()。调用update()的前提是需要建立一个时钟 如下）
-    this.controls.minPolarAngle = -Infinity; // 控制器垂直方向最小旋转角度（理解为逆时针旋转角度）
-    this.controls.maxPolarAngle = Infinity; // 控制器垂直方向最大旋转角度（理解为顺时针旋转角度）
-    this.controls.target.set(0, 0, 0);
+    // orbit 轨道控制器
+    this.orbit = new OrbitControls(this.camera, this.gl.domElement);
+    this.orbit.target.set(0, 0, 0);
+    this.orbit.addEventListener('change', this.render);
+    this.orbit.update();
+    this.scene.add(this.orbit);
+    // TransformControls 变换控制器
+    this.transControl = new TransformControls(this.camera, this.gl.domElement);
+    this.transControl.addEventListener('change', this.render);
+    this.scene.add(this.transControl);
   };
 
-  animate = () => {
+  render = () => {
     this.gl.render(this.scene, this.camera);
-    requestAnimationFrame(this.animate);
   };
 
   /** 加载单个文件  */
   loadPcdItem = (): Promise<any> => {
     const loader = new PCDLoader();
 
-    return new Promise((resolve, reject) => {
+    return new Promise((_resolve, reject) => {
       loader.load(
         '04.pcd',
         (points) => {
           points.material.size = POINTSIZE;
           this.scene.add(points);
+          this.render();
         },
         undefined,
         () => {
@@ -75,11 +87,59 @@ export class ThreeHelper {
     });
   };
 
-  drawBoxGeometry = () => {
+  /** 标记卡车red */
+  drawRedBox = () => {
     const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const material = new THREE.MeshBasicMaterial({
+      color: CAR_COLOR,
+      wireframe: true,
+      transparent: true,
+    }); // 空心立体框
     const cube = new THREE.Mesh(geometry, material);
+
     this.scene.add(cube);
+    this.transControl.attach(cube);
+
+    this.transControl.setMode('translate');
+    this.transControl.addEventListener('dragging-changed', (event) => {
+      console.log('==>', event);
+      // event.
+      if (this.orbit) {
+        this.orbit.enabled = !event.value;
+      }
+    });
+  };
+
+  /** 标记小汽车yellow */
+  drawYellowBox = () => {
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshBasicMaterial({
+      color: TRANK_COLOR,
+      wireframe: true,
+    }); // 空心立体框
+    const cube = new THREE.Mesh(geometry, material);
+
+    this.scene.add(cube);
+    this.transControl.attach(cube);
+    this.transControl.setMode('translate');
+  };
+
+  /** 导出 */
+  exportJson = () => {
+    const boxMap: Map<string, BoxItem> = new Map();
+    console.log('==>', this.scene);
+    this.scene.children.map((mesh: THREE.Mesh, i: number) => {
+      if (mesh.type === 'Mesh') {
+        boxMap.set(`${i}`, {
+          name: '3',
+          type: LabelType.CAR,
+          position: mesh.geometry.attributes.position,
+        });
+      }
+    });
+
+    console.log('==>', boxMap);
+    downLoadAsJson(boxMap);
   };
 
   /** resize */
@@ -91,7 +151,7 @@ export class ThreeHelper {
     this.gl?.dispose();
     this.gl?.forceContextLoss();
     this.scene?.clear();
-    this.controls?.dispose();
+    this.orbit?.dispose();
     this.camera?.clear();
   };
 }

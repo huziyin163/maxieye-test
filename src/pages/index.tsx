@@ -13,16 +13,25 @@ export default function IndexPage() {
     return new GUI();
   }, []);
 
-  /** 标记卡车 */
-  const addTruck = () => {};
+  /** 标记卡车red */
+  const addRedTruck = () => {
+    lidarThree.drawRedBox();
+    lidarThree.render();
+  };
+  /** 标记小汽车yellow  */
+  const addYellowCar = () => {
+    lidarThree.drawYellowBox();
+    lidarThree.render();
+  };
   /** 删除卡车*/
   const removeTruck = () => {};
-  /** 标记小汽车 */
-  const addCar = () => {};
+
   /** 删除小汽车 */
   const removeCar = () => {};
   /** 导出json文件 */
-  const exportJson = () => {};
+  const exportJson = () => {
+    lidarThree.exportJson();
+  };
 
   const onLoadPcd = () => {
     lidarThree.loadPcdItem();
@@ -57,9 +66,9 @@ export default function IndexPage() {
       width: 15,
       height: 15,
       depth: 15,
-      addTruck: addTruck,
+      addRedTruck: addRedTruck,
+      addYellowCar: addYellowCar,
       removeTruck: removeTruck,
-      addCar: addCar,
       removeCar: removeCar,
       exportJson: exportJson,
     };
@@ -72,11 +81,20 @@ export default function IndexPage() {
     folderCar.add(params, 'width', 500, 500).step(0.01).onChange(updateSize);
     folderCar.add(params, 'height', 500, 500).step(0.01).onChange(updateSize);
     folderCar.add(params, 'depth', 500, 500).step(0.01).onChange(updateSize);
-    gui.add(params, 'addTruck');
-    gui.add(params, 'addCar');
+    gui.add(params, 'addRedTruck');
+    gui.add(params, 'addYellowCar');
     gui.add(params, 'removeTruck');
     gui.add(params, 'removeCar');
     gui.add(params, 'exportJson');
+  };
+
+  /** 快捷键监听事件 */
+  const onKeyDown = (event) => {
+    switch (event.keyCode) {
+      case 82: // R
+        lidarThree.transControl.setMode('scale');
+        break;
+    }
   };
 
   useEffect(() => {
@@ -85,10 +103,11 @@ export default function IndexPage() {
     }
     initGUI();
     lidarThree.loadPcdItem();
-    // document.addEventListener('pointermove', onDrawCarBox);
+    lidarThree.render();
+    window.addEventListener('keydown', onKeyDown);
     return () => {
       // lidarThree.unintall();
-      // document.removeEventListener('pointermove', onDrawCarBox);
+      window.removeEventListener('keydown', onKeyDown);
     };
   }, []);
 
