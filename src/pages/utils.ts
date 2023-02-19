@@ -15,9 +15,10 @@ export enum LabelType {
 }
 
 export interface BoxItem {
-  name: string; // 标签
-  type: LabelType; //
-  position: number[]; // 坐标
+  color: string; // 颜色
+  type: LabelType; // 标签 小汽车 or 大卡车
+  position: THREE.Vector3; // 坐标
+  size: THREE.Vector3; // 长宽高
 }
 
 export const downLoadAsJson = (data: Map<string, BoxItem>) => {

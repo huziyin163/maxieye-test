@@ -9,8 +9,9 @@ import { downLoadAsJson, LabelType, BoxItem } from './utils';
 // 点云点大小
 const POINTSIZE = 0.1;
 
-const CAR_COLOR = '#DC143C';
-const TRANK_COLOR = '#FFFF00';
+// 颜色
+const CAR_COLOR = '#DC143C'; // 红色
+const TRANK_COLOR = '#FFFF00'; // 黄色
 
 export class ThreeHelper {
   scene; // 场景
@@ -23,7 +24,7 @@ export class ThreeHelper {
 
   transControl: TransformControls | undefined; // 单个立体框的控制器 - 控制立体框
 
-  allBoxMap: BoxItem[];
+  allBoxMap: Map<string, BoxItem>;
 
   constructor() {
     this.init();
@@ -55,36 +56,40 @@ export class ThreeHelper {
     this.orbit.addEventListener('change', this.render);
     this.orbit.update();
     this.scene.add(this.orbit);
+
     // TransformControls 变换控制器
     this.transControl = new TransformControls(this.camera, this.gl.domElement);
     this.transControl.addEventListener('change', this.render);
+    this.transControl.addEventListener('dragging-changed', (event) => {
+      if (this.orbit) {
+        this.orbit.enabled = !event.value;
+      }
+    });
     this.scene.add(this.transControl);
+
+    // 储存box需要打印的信息
+    this.allBoxMap = new Map();
   };
 
   render = () => {
     this.gl.render(this.scene, this.camera);
   };
 
-  /** 加载单个文件  */
-  loadPcdItem = (): Promise<any> => {
+  /** 加载pcd 文件  */
+  loadPcdItem = () => {
     const loader = new PCDLoader();
-
-    return new Promise((_resolve, reject) => {
-      loader.load(
-        '04.pcd',
-        (points) => {
-          points.material.size = POINTSIZE;
-          this.scene.add(points);
-          this.render();
-        },
-        undefined,
-        () => {
-          message.error('pcd文件加载失败');
-          // eslint-disable-next-line prefer-promise-reject-errors
-          reject();
-        },
-      );
-    });
+    loader.load(
+      '04.pcd',
+      (points) => {
+        points.material.size = POINTSIZE;
+        this.scene.add(points);
+        this.render();
+      },
+      undefined,
+      () => {
+        message.error('pcd文件加载失败');
+      },
+    );
   };
 
   /** 标记卡车red */
@@ -99,14 +104,13 @@ export class ThreeHelper {
 
     this.scene.add(cube);
     this.transControl.attach(cube);
-
     this.transControl.setMode('translate');
-    this.transControl.addEventListener('dragging-changed', (event) => {
-      console.log('==>', event);
-      // event.
-      if (this.orbit) {
-        this.orbit.enabled = !event.value;
-      }
+
+    this.allBoxMap.set(cube.uuid, {
+      color: TRANK_COLOR,
+      type: LabelType.TRANK,
+      position: cube.position,
+      size: cube.scale,
     });
   };
 
@@ -118,27 +122,30 @@ export class ThreeHelper {
       wireframe: true,
     }); // 空心立体框
     const cube = new THREE.Mesh(geometry, material);
-
     this.scene.add(cube);
     this.transControl.attach(cube);
     this.transControl.setMode('translate');
+
+    this.allBoxMap.set(cube.uuid, {
+      color: CAR_COLOR,
+      type: LabelType.CAR,
+      position: cube.position,
+      size: cube.scale,
+    });
   };
 
   /** 导出 */
   exportJson = () => {
     const boxMap: Map<string, BoxItem> = new Map();
-    console.log('==>', this.scene);
     this.scene.children.map((mesh: THREE.Mesh, i: number) => {
       if (mesh.type === 'Mesh') {
-        boxMap.set(`${i}`, {
-          name: '3',
-          type: LabelType.CAR,
-          position: mesh.geometry.attributes.position,
+        boxMap.set(`${mesh.uuid}`, {
+          ...this.allBoxMap.get(mesh.uuid),
+          position: mesh.position,
+          size: mesh.scale,
         });
       }
     });
-
-    console.log('==>', boxMap);
     downLoadAsJson(boxMap);
   };
 
@@ -152,6 +159,7 @@ export class ThreeHelper {
     this.gl?.forceContextLoss();
     this.scene?.clear();
     this.orbit?.dispose();
+    this.transControl?.dispose();
     this.camera?.clear();
   };
 }

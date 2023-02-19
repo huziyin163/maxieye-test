@@ -23,42 +23,11 @@ export default function IndexPage() {
     lidarThree.drawYellowBox();
     lidarThree.render();
   };
-  /** 删除卡车*/
-  const removeTruck = () => {};
 
-  /** 删除小汽车 */
-  const removeCar = () => {};
   /** 导出json文件 */
   const exportJson = () => {
     lidarThree.exportJson();
   };
-
-  const onLoadPcd = () => {
-    lidarThree.loadPcdItem();
-  };
-
-  const onPointerDown = (event) => {
-    // onDownPosition.x = event.clientX;
-    // onDownPosition.y = event.clientY;
-  };
-
-  const onPointerUp = (event) => {
-    // onUpPosition.x = event.clientX;
-    // onUpPosition.y = event.clientY;
-    // if (onDownPosition.distanceTo(onUpPosition) === 0)
-    //   transformControl.detach();
-  };
-
-  const onDrawCarBox = () => {
-    // lidarThree.drawBoxGeometry();
-    // console.log('===>', p);
-  };
-
-  /** 更新立体框的size */
-  const updateSize = () => {};
-
-  // todo
-  const onResize = () => {};
 
   /** 初始化GUI */
   const initGUI = () => {
@@ -68,23 +37,10 @@ export default function IndexPage() {
       depth: 15,
       addRedTruck: addRedTruck,
       addYellowCar: addYellowCar,
-      removeTruck: removeTruck,
-      removeCar: removeCar,
       exportJson: exportJson,
     };
-
-    const folderTrunk = gui.addFolder('folderTrunk');
-    const folderCar = gui.addFolder('folderCar');
-    folderTrunk.add(params, 'width', 500, 500).step(0.01).onChange(updateSize);
-    folderTrunk.add(params, 'height', 500, 500).step(0.01).onChange(updateSize);
-    folderTrunk.add(params, 'depth', 500, 500).step(0.01).onChange(updateSize);
-    folderCar.add(params, 'width', 500, 500).step(0.01).onChange(updateSize);
-    folderCar.add(params, 'height', 500, 500).step(0.01).onChange(updateSize);
-    folderCar.add(params, 'depth', 500, 500).step(0.01).onChange(updateSize);
     gui.add(params, 'addRedTruck');
     gui.add(params, 'addYellowCar');
-    gui.add(params, 'removeTruck');
-    gui.add(params, 'removeCar');
     gui.add(params, 'exportJson');
   };
 
@@ -93,6 +49,12 @@ export default function IndexPage() {
     switch (event.keyCode) {
       case 82: // R
         lidarThree.transControl.setMode('scale');
+        break;
+      case 87: // W
+        lidarThree.transControl.setMode('translate');
+        break;
+      case 69: // E
+        lidarThree.transControl.setMode('rotate');
         break;
     }
   };
@@ -106,10 +68,22 @@ export default function IndexPage() {
     lidarThree.render();
     window.addEventListener('keydown', onKeyDown);
     return () => {
-      // lidarThree.unintall();
       window.removeEventListener('keydown', onKeyDown);
     };
   }, []);
 
-  return <div ref={lidar} />;
+  return (
+    <>
+      <div ref={lidar} />
+      <div className="modal">
+        &nbsp;<b>快捷键👇🏻</b>
+        <br />
+        &nbsp;<b>w:</b> 移动 <br />
+        &nbsp;<b>e:</b> 旋转
+        <br />
+        &nbsp;<b>r:</b> 缩放
+        <br />
+      </div>
+    </>
+  );
 }
